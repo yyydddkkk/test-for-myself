@@ -18,6 +18,11 @@ def count_bytes(path):
         return len(handle.read())
 
 
+def count_chars(path):
+    with open(path, encoding="utf-8", newline="") as handle:
+        return len(handle.read())
+
+
 def main(argv):
     args = argv[1:]
     count = count_words
@@ -27,14 +32,20 @@ def main(argv):
     elif args and args[0] == "--bytes":
         count = count_bytes
         args = args[1:]
+    elif args and args[0] == "--chars":
+        count = count_chars
+        args = args[1:]
     if len(args) != 1:
-        print(f"usage: {argv[0]} [--lines | --bytes] FILE", file=sys.stderr)
+        print(f"usage: {argv[0]} [--lines | --bytes | --chars] FILE", file=sys.stderr)
         return 2
     path = args[0]
     try:
         result = count(path)
     except FileNotFoundError:
         print(f"{argv[0]}: {path}: No such file or directory", file=sys.stderr)
+        return 2
+    except UnicodeDecodeError:
+        print(f"{argv[0]}: {path}: invalid UTF-8", file=sys.stderr)
         return 2
     print(result)
     return 0
