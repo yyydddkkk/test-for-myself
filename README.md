@@ -32,7 +32,8 @@ Convert a Unicode domain name to its IDNA2008 ASCII (A-label) form:
 
 `to_ascii` validates every label against RFC 5890-5893, including the
 RFC 5892 derived code point properties, contextual rules, label syntax and
-the Bidi Rule, and raises `ValueError` for an invalid label:
+the RFC 5893 Bidi Rule (applied to every label when the domain contains a
+right-to-left label), and raises `ValueError` for an invalid label:
 
 ```python
 >>> to_ascii("a..b")
@@ -47,5 +48,5 @@ ValueError: label '😀' contains disallowed code point U+1F600
 
 IDNA2008 performs no case or compatibility mapping, so input must already be
 in lowercase NFC. A single trailing root dot is preserved. Only `U+002E`
-separates labels. Existing A-labels are validated and returned in canonical
-lowercase form.
+separates labels. A-labels must already be lowercase; valid A-labels are
+validated and returned unchanged.

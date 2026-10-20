@@ -11,13 +11,13 @@ the IDNA2008 rules (RFC 5890-5893):
   digits;
 * the label rules of RFC 5891 (NFC, hyphen restrictions, no leading
   combining mark, label length);
-* the Bidi Rule of RFC 5893 for labels containing right-to-left
-  characters.
+* the Bidi Rule of RFC 5893, applied to every label when the domain
+  contains a right-to-left label.
 
 IDNA2008 defines no case mapping or compatibility mapping, so this module
 performs neither: input must already be in NFC and use the canonical
-(lowercase) spellings of letters.  Labels that already are A-labels are
-validated and returned in lowercase canonical form.
+(lowercase) spellings of letters.  A-labels must already be lowercase;
+valid A-labels are validated and returned unchanged.
 
 Only U+002E FULL STOP separates labels.  A single trailing root dot is
 preserved; empty labels are rejected.
@@ -285,9 +285,11 @@ def _valid_contexto(label: str, pos: int) -> bool:
     return False
 
 
-def _check_bidi(label: str) -> None:
+def _check_bidi(label: str, check_ltr: bool = False) -> None:
     directions = [unicodedata.bidirectional(char) for char in label]
-    if not any(direction in _RTL_CATEGORIES for direction in directions):
+    if not check_ltr and not any(
+        direction in _RTL_CATEGORIES for direction in directions
+    ):
         return
 
     first = directions[0]
@@ -318,7 +320,10 @@ def _check_bidi(label: str) -> None:
 
 
 def _check_label(label: str) -> None:
-    """Validate one U-label (or ASCII LDH label) under IDNA2008."""
+    """Validate one U-label (or ASCII LDH label) under IDNA2008.
+
+    The Bidi Rule is applied separately at domain level in :func:`to_ascii`.
+    """
     if not label:
         raise ValueError("empty label")
     if len(label) > _MAX_LABEL_LENGTH:
@@ -357,7 +362,11 @@ def _check_label(label: str) -> None:
             f"label {label!r} contains disallowed code point U+{ord(char):04X}"
         )
 
-    _check_bidi(label)
+
+def _is_rtl_label(label: str) -> bool:
+    return any(
+        unicodedata.bidirectional(char) in _RTL_CATEGORIES for char in label
+    )
 
 
 def _encode_label(label: str) -> str:
@@ -426,16 +435,21 @@ def to_ascii(domain: str) -> str:
     if any(label == "" for label in labels):
         raise ValueError("domain contains an empty label")
 
-    ascii_labels = []
+    parsed_labels = []
     for label in labels:
         if label.isascii():
-            _, ascii_label = _parse_ascii_label(label)
+            parsed_labels.append(_parse_ascii_label(label))
         else:
             _check_label(label)
-            ascii_label = _encode_label(label)
-        ascii_labels.append(ascii_label)
+            parsed_labels.append((label, _encode_label(label)))
 
-    result = ".".join(ascii_labels)
+    # RFC 5893 applies the Bidi Rule to every label of a Bidi domain name,
+    # including LTR and pure-ASCII labels.
+    rtl_domain = any(_is_rtl_label(u_label) for u_label, _ in parsed_labels)
+    for u_label, _ in parsed_labels:
+        _check_bidi(u_label, check_ltr=rtl_domain)
+
+    result = ".".join(ascii_label for _, ascii_label in parsed_labels)
     if len(result) > _MAX_DOMAIN_LENGTH:
         raise ValueError("domain is too long")
     return result + "." if trailing_dot else result

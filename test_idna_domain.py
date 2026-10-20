@@ -201,6 +201,18 @@ class BidiRuleTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             to_ascii("مثال-abc.example")
 
+    def test_ltr_labels_are_checked_in_a_bidi_domain(self):
+        # RFC 5893 applies to every label once the domain has an RTL label.
+        for domain in ("0à.א", "àˇ.א", "123.مثال", "مثال.123"):
+            with self.assertRaises(ValueError):
+                to_ascii(domain)
+
+    def test_digit_leading_label_is_valid_without_rtl_labels(self):
+        self.assertEqual(to_ascii("123.example"), "123.example")
+
+    def test_valid_mixed_direction_domain(self):
+        self.assertEqual(to_ascii("abc.א"), "abc.xn--4db")
+
 
 if __name__ == "__main__":
     unittest.main()
