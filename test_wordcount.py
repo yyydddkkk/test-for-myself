@@ -103,6 +103,28 @@ class WordCountTest(unittest.TestCase):
         self.assertIn("missing.bin", result.stderr)
         self.assertIn("No such file", result.stderr)
 
+    def test_words_invalid_utf8_exits_2_without_traceback(self):
+        path = self.directory / "invalid.bin"
+        path.write_bytes(b"\xff\n")
+
+        result = run(str(path))
+
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertIn("invalid UTF-8", result.stderr)
+
+    def test_lines_invalid_utf8_exits_2_without_traceback(self):
+        path = self.directory / "invalid.bin"
+        path.write_bytes(b"\xff\n")
+
+        result = run("--lines", str(path))
+
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertIn("invalid UTF-8", result.stderr)
+
     def test_chars_counts_unicode_code_points(self):
         path = self.directory / "chinese.txt"
         path.write_text("中a\n", encoding="utf-8")
