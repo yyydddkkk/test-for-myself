@@ -81,7 +81,7 @@ class QuotedFieldTests(unittest.TestCase):
 
 class MalformedInputTests(unittest.TestCase):
     def test_unterminated_quoted_field(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, r"offset 0"):
             parse_csv('"abc')
 
     def test_quote_inside_unquoted_field(self):

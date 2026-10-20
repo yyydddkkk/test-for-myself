@@ -50,6 +50,7 @@ def parse_csv(text: str) -> list[list[str]]:
     at_field_start = True
     in_quotes = False
     after_quote = False
+    quote_start = 0
     i = 0
     n = len(text)
 
@@ -122,6 +123,7 @@ def parse_csv(text: str) -> list[list[str]]:
                     "a quoted field must start with a quote"
                 )
             in_quotes = True
+            quote_start = i
             at_field_start = False
             i += 1
             continue
@@ -131,7 +133,9 @@ def parse_csv(text: str) -> list[list[str]]:
         i += 1
 
     if in_quotes:
-        raise ValueError("unterminated quoted field")
+        raise ValueError(
+            f"unterminated quoted field starting at offset {quote_start}"
+        )
 
     if record or not at_field_start or after_quote:
         record.append("".join(field))
