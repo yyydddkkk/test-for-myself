@@ -63,6 +63,46 @@ class WordCountTest(unittest.TestCase):
         self.assertIn("missing.txt", result.stderr)
         self.assertIn("No such file", result.stderr)
 
+    def test_bytes_counts_multibyte_utf8(self):
+        path = self.directory / "chinese.txt"
+        path.write_bytes(b"\xe4\xb8\xad\n")
+
+        result = run("--bytes", str(path))
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "4\n")
+        self.assertEqual(result.stderr, "")
+
+    def test_bytes_counts_invalid_utf8(self):
+        path = self.directory / "invalid.bin"
+        path.write_bytes(b"\xff\n")
+
+        result = run("--bytes", str(path))
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "2\n")
+        self.assertEqual(result.stderr, "")
+
+    def test_bytes_counts_empty_file_as_zero(self):
+        path = self.directory / "empty.bin"
+        path.write_bytes(b"")
+
+        result = run("--bytes", str(path))
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "0\n")
+        self.assertEqual(result.stderr, "")
+
+    def test_bytes_missing_file_exits_2_with_stderr_message(self):
+        path = self.directory / "missing.bin"
+
+        result = run("--bytes", str(path))
+
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("missing.bin", result.stderr)
+        self.assertIn("No such file", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
