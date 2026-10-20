@@ -2,6 +2,10 @@
 
 ## wordcount
 
+```console
+usage: python3 wordcount.py [--lines | --bytes | --chars] FILE
+```
+
 Count whitespace-separated words in a file:
 
 ```console
@@ -25,4 +29,15 @@ $ python3 wordcount.py --bytes notes.txt
 314
 ```
 
-A missing file prints an error to stderr and exits with status 2.
+Count Unicode characters with `--chars`, which counts code points, so a
+multi-byte UTF-8 character such as `中` counts once and spaces and newlines
+count too:
+
+```console
+$ python3 wordcount.py --chars notes.txt
+314
+```
+
+A missing file prints an error to stderr and exits with status 2. Text modes
+(`--chars`, `--lines` and the default word count) reject invalid UTF-8 with
+status 2 and a short stderr message.
