@@ -33,6 +33,16 @@ class WordCountTest(unittest.TestCase):
         self.assertEqual(result.stdout, "5\n")
         self.assertEqual(result.stderr, "")
 
+    def test_lines_flag_counts_lines(self):
+        path = self.directory / "sample.txt"
+        path.write_text("alpha\nbeta\ngamma\n", encoding="utf-8")
+
+        result = run("--lines", str(path))
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "3\n")
+        self.assertEqual(result.stderr, "")
+
     def test_empty_file_counts_zero(self):
         path = self.directory / "empty.txt"
         path.write_text("", encoding="utf-8")

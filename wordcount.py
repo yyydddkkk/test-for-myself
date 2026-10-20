@@ -1,4 +1,4 @@
-"""Count whitespace-separated words in a file."""
+"""Count whitespace-separated words or lines in a file."""
 
 import sys
 
@@ -8,17 +8,27 @@ def count_words(path):
         return len(handle.read().split())
 
 
+def count_lines(path):
+    with open(path, encoding="utf-8") as handle:
+        return len(handle.read().splitlines())
+
+
 def main(argv):
-    if len(argv) != 2:
-        print(f"usage: {argv[0]} FILE", file=sys.stderr)
+    args = argv[1:]
+    count = count_words
+    if args and args[0] == "--lines":
+        count = count_lines
+        args = args[1:]
+    if len(args) != 1:
+        print(f"usage: {argv[0]} [--lines] FILE", file=sys.stderr)
         return 2
-    path = argv[1]
+    path = args[0]
     try:
-        count = count_words(path)
+        result = count(path)
     except FileNotFoundError:
         print(f"{argv[0]}: {path}: No such file or directory", file=sys.stderr)
         return 2
-    print(count)
+    print(result)
     return 0
 
 
