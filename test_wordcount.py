@@ -103,6 +103,57 @@ class WordCountTest(unittest.TestCase):
         self.assertIn("missing.bin", result.stderr)
         self.assertIn("No such file", result.stderr)
 
+    def test_chars_counts_unicode_code_points(self):
+        path = self.directory / "chinese.txt"
+        path.write_text("中a\n", encoding="utf-8")
+
+        result = run("--chars", str(path))
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "3\n")
+        self.assertEqual(result.stderr, "")
+
+    def test_chars_counts_spaces_tabs_and_newlines(self):
+        path = self.directory / "whitespace.txt"
+        path.write_text(" a \n\n b\t", encoding="utf-8")
+
+        result = run("--chars", str(path))
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "8\n")
+        self.assertEqual(result.stderr, "")
+
+    def test_chars_counts_empty_file_as_zero(self):
+        path = self.directory / "empty.txt"
+        path.write_text("", encoding="utf-8")
+
+        result = run("--chars", str(path))
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "0\n")
+        self.assertEqual(result.stderr, "")
+
+    def test_chars_missing_file_exits_2_with_stderr_message(self):
+        path = self.directory / "missing.txt"
+
+        result = run("--chars", str(path))
+
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("missing.txt", result.stderr)
+        self.assertIn("No such file", result.stderr)
+
+    def test_chars_invalid_utf8_exits_2_without_traceback(self):
+        path = self.directory / "invalid.bin"
+        path.write_bytes(b"\xff\n")
+
+        result = run("--chars", str(path))
+
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("invalid UTF-8", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
