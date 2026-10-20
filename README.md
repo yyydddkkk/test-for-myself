@@ -38,6 +38,6 @@ $ python3 wordcount.py --chars notes.txt
 314
 ```
 
-A missing file prints an error to stderr and exits with status 2. Text modes
-(`--chars`, `--lines` and the default word count) reject invalid UTF-8 with
-status 2 and a short stderr message.
+A missing file prints an error to stderr and exits with status 2. `--chars`
+rejects invalid UTF-8 with status 2 and a short stderr message instead of a
+traceback.

@@ -45,6 +45,9 @@ def main(argv):
         print(f"{argv[0]}: {path}: No such file or directory", file=sys.stderr)
         return 2
     except UnicodeDecodeError:
+        if count is not count_chars:
+            # Words and lines keep their historical behaviour on invalid UTF-8.
+            raise
         print(f"{argv[0]}: {path}: invalid UTF-8", file=sys.stderr)
         return 2
     print(result)
