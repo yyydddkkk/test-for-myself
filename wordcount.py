@@ -1,4 +1,4 @@
-"""Count whitespace-separated words or lines in a file."""
+"""Count whitespace-separated words, lines or bytes in a file."""
 
 import sys
 
@@ -13,14 +13,22 @@ def count_lines(path):
         return len(handle.read().splitlines())
 
 
+def count_bytes(path):
+    with open(path, "rb") as handle:
+        return len(handle.read())
+
+
 def main(argv):
     args = argv[1:]
     count = count_words
     if args and args[0] == "--lines":
         count = count_lines
         args = args[1:]
+    elif args and args[0] == "--bytes":
+        count = count_bytes
+        args = args[1:]
     if len(args) != 1:
-        print(f"usage: {argv[0]} [--lines] FILE", file=sys.stderr)
+        print(f"usage: {argv[0]} [--lines | --bytes] FILE", file=sys.stderr)
         return 2
     path = args[0]
     try:
