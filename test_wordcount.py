@@ -104,5 +104,75 @@ class WordCountTest(unittest.TestCase):
         self.assertIn("No such file", result.stderr)
 
 
+class LongestLineTest(unittest.TestCase):
+    """Acceptance tests for --longest-line, all exercised through the CLI."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.directory = Path(tmp.name)
+
+    def write_bytes(self, name, data):
+        path = self.directory / name
+        path.write_bytes(data)
+        return path
+
+    def assert_success(self, result, expected):
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, f"{expected}\n")
+        self.assertEqual(result.stderr, "")
+
+    def test_counts_longest_line_by_code_point(self):
+        path = self.write_bytes("sample.txt", "中a\nabc\n".encode("utf-8"))
+
+        self.assert_success(run("--longest-line", str(path)), 3)
+
+    def test_empty_file_reports_zero(self):
+        path = self.write_bytes("empty.txt", b"")
+
+        self.assert_success(run("--longest-line", str(path)), 0)
+
+    def test_counts_final_line_without_newline(self):
+        path = self.write_bytes("sample.txt", b"ab\nabcd")
+
+        self.assert_success(run("--longest-line", str(path)), 4)
+
+    def test_excludes_line_terminators_from_length(self):
+        path = self.write_bytes("sample.txt", b"abcd\n")
+
+        self.assert_success(run("--longest-line", str(path)), 4)
+
+    def test_multibyte_characters_count_once(self):
+        path = self.write_bytes("chinese.txt", "中文中文\nab\n".encode("utf-8"))
+
+        self.assert_success(run("--longest-line", str(path)), 4)
+
+    def test_blank_line_does_not_win(self):
+        path = self.write_bytes("sample.txt", b"a\n\nabc\n")
+
+        self.assert_success(run("--longest-line", str(path)), 3)
+
+    def test_missing_file_exits_2_without_stdout_or_traceback(self):
+        path = self.directory / "missing.txt"
+
+        result = run("--longest-line", str(path))
+
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("missing.txt", result.stderr)
+        self.assertIn("No such file", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_invalid_utf8_exits_2_without_stdout_or_traceback(self):
+        path = self.write_bytes("invalid.bin", b"\xff\n")
+
+        result = run("--longest-line", str(path))
+
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("invalid.bin", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
